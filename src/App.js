@@ -14,7 +14,8 @@ const initialFormState = { name: "", description: "" };
 function App() {
   const [notes, setNotes] = useState([]);
   const [formData, setFormData] = useState(initialFormState);
-
+  const [editing, setEditing] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState("");
   useEffect(() => {
     fetchNotes();
   }, []);
@@ -64,22 +65,28 @@ function App() {
     });
   }
 
-  // const updateNote = async ({ name, description }) => {
-  //   try {
-  //     const original = await Storage.query(Note, input.id);
-  //     const update = await Storage.save(
-  //       Note.copyOf(original, (updated) => {
-  //         updated.name = name;
-  //         updated.description = description;
-  //       })
-  //     );
-  //     update && goBack(navigation)();
-  //     setLoading(false);
-  //   } catch (err) {
-  //     setError(err);
-  //   }
-  // };
+  const editNote = (note) => {
+    setEditing(true);
+    setEditingNoteId(note.id);
+    const data = {
+      id: note.id,
+      name: note.name,
+      description: note.description,
+    };
+    setFormData(data);
+    console.log(data);
+  };
 
+  async function updateNote() {
+    await API.graphql({
+      query: updateNoteMutation,
+      variables: { input: formData },
+    });
+    setEditing(false);
+    fetchNotes();
+    setFormData(initialFormState);
+    setEditingNoteId("");
+  }
   return (
     <div className="App">
       <h1>My Notes App</h1>
@@ -96,13 +103,20 @@ function App() {
         value={formData.description}
       />
       <input type="file" onChange={onChange} />
-      <button onClick={createNote}>Create Note</button>
+
+      {editing === false ? (
+        <button onClick={createNote}>Create Note</button>
+      ) : (
+        <button onClick={updateNote}>Update note</button>
+      )}
+
       <div style={{ marginBottom: 30 }}>
         {notes.map((note) => (
           <div key={note.id || note.name}>
             <h2>{note.name}</h2>
             <p>{note.description}</p>
             <button onClick={() => deleteNote(note)}>Delete note</button>
+            <button onClick={() => editNote(note)}>Edit note</button>
             {note.image && <img src={note.image} style={{ width: 400 }} />}
           </div>
         ))}
