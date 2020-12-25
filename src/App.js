@@ -78,6 +78,13 @@ function App() {
   };
 
   async function updateNote() {
+    if (!formData.name || !formData.description) {
+      setEditing(false);
+      fetchNotes();
+      setFormData(initialFormState);
+      setEditingNoteId("");
+      return;
+    }
     await API.graphql({
       query: updateNoteMutation,
       variables: { input: formData },
@@ -115,7 +122,9 @@ function App() {
           <div key={note.id || note.name}>
             <h2>{note.name}</h2>
             <p>{note.description}</p>
-            <button onClick={() => deleteNote(note)}>Delete note</button>
+            <button disabled={editing} onClick={() => deleteNote(note)}>
+              Delete note
+            </button>
             <button onClick={() => editNote(note)}>Edit note</button>
             {note.image && <img src={note.image} style={{ width: 400 }} />}
           </div>
